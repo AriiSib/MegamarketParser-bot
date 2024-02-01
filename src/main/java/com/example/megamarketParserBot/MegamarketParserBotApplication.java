@@ -12,10 +12,17 @@ public class MegamarketParserBotApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(MegamarketParserBotApplication.class, args);
 
-		WebDriver webDriver = WebDriverHandler.webDriverInitializer();
-		Parser parser = new Parser(webDriver);
-		parser.viewOffer();
-		webDriver.quit();
+		while (true) {
+			WebDriver webDriver = WebDriverHandler.webDriverInitializer();
+			Parser parser = new Parser(webDriver);
+			parser.getOffers();
+			webDriver.quit();
+			try {
+				Thread.sleep(3000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 }
