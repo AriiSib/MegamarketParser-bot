@@ -12,7 +12,7 @@ public enum Urls {
 
     BUDS("https://megamarket.ru/catalog/details/naushniki-oneplus-buds-pro-2-e507a-besprovodnye-chernye-100050653829/#?details_block=prices"),
 
-    TEST("https://megamarket.ru/catalog/details/sw-huawei-dan-b19-bl-ni-100025654339/#?details_block=prices");
+    TEST("https://megamarket.ru/catalog/details/besprovodnye-naushniki-samsung-galaxy-buds2-pro-graphite-600008862967/#?details_block=prices");
 
     private final String url;
 

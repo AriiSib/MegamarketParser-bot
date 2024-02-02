@@ -47,13 +47,14 @@ public class Parser {
     /**
      * Будущий фильтр
      */
-    public void findOffer(String target) {
+    public boolean findOffer() {
         Map<String, String> offers = getOffers();
         for (Map.Entry<String, String> offer : offers.entrySet()) {
             if (offer.getKey().equalsIgnoreCase("Мегамаркет Москва")) {
-
+                return true;
             }
         }
+        return false;
     }
 
 

@@ -1,17 +1,27 @@
 package com.example.megamarketParserBot.service;
 
 import com.example.megamarketParserBot.config.BotConfig;
+import com.example.megamarketParserBot.config.WebDriverHandler;
 import lombok.extern.slf4j.Slf4j;
+import org.openqa.selenium.WebDriver;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.time.Duration;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
 @Slf4j
 @Component
 public class TelegramBot extends TelegramLongPollingBot {
 
+    private ExecutorService executor = Executors.newSingleThreadExecutor();
+
+    private boolean isParsing = false;
     final BotConfig config;
 
     public TelegramBot(BotConfig config) {
@@ -38,15 +48,23 @@ public class TelegramBot extends TelegramLongPollingBot {
 
 
             switch (messageText) {
-                case "/start":
+                case "/go":
                     startCommandReceived(chatId, update.getMessage().getChat().getFirstName());
                     break;
 
-                case "/go":
-                    startParse(chatId);
+                case "/start":
+                    isParsing = true;
+                    executor.submit(() -> startParse(chatId));
+                    sendMessage(chatId, "Парсер запущен");
                     break;
 
-                default: sendMessage(chatId, "Sorry, command was not recognized");
+                case "/stop":
+                    isParsing = false;
+                    sendMessage(chatId, "Останавливаю парсер...");
+                    break;
+
+                default:
+                    sendMessage(chatId, "Команда не поддерживается");
             }
         }
 
@@ -54,14 +72,38 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private void startParse(long chatId) {
 
+        try {
+            while (isParsing) {
+                WebDriver webDriver = WebDriverHandler.webDriverInitializer();
+                Parser parser = new Parser(webDriver);
+                if (parser.findOffer()) {
+                    sendMessage(chatId, "Товар появлися в наличии!");
+                    webDriver.quit();
+                    try {
+                        TimeUnit.SECONDS.sleep(30);
+                        continue;
+                    } catch (InterruptedException e) {
+                        continue;
+                    }
+                }
 
+                webDriver.quit();
 
+                try {
+                    TimeUnit.SECONDS.sleep(30);
+                } catch (InterruptedException e) {
+                }
+            }
+            sendMessage(chatId, "Парсер остановлен");
+        } catch (Exception e) {
+            sendMessage(chatId, "Критическая ошибка!!!");
+        }
     }
 
     private void startCommandReceived(long chatId, String name) {
 
-        String answer = "Hi, " + name + ", nice to meet you!";
-        log.info("Replied to user: " + name);
+        String answer = "Привет, " + name + ", приятно познакомиться";
+//        log.info("Replied to user: " + name);
 
         sendMessage(chatId, answer);
     }
@@ -74,7 +116,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         try {
             execute(message);
         } catch (TelegramApiException e) {
-            log.error("Error occurred: " + e.getMessage());
+//            log.error("Error occurred: " + e.getMessage());
         }
 
     }
