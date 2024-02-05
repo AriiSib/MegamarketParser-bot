@@ -36,10 +36,10 @@ public class Parser {
             WebElement priceElement = element.findElement(By.cssSelector("meta[itemprop='price']"));
             String price = priceElement.getAttribute("content");
             offers.put(merchantName, price);
-            System.out.println(merchantName + " " + price);
+//            System.out.println(merchantName + " " + price);
         }
 
-        System.out.println();
+//        System.out.println();
 
         return offers;
     }
@@ -57,7 +57,9 @@ public class Parser {
         return false;
     }
 
-
+    public String serverTest() {
+        return webDriver.getPageSource();
+    }
 
 }
 
