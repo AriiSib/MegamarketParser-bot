@@ -1,6 +1,7 @@
 package com.example.megamarketParserBot.service;
 
 import com.example.megamarketParserBot.config.BotConfig;
+import com.example.megamarketParserBot.config.Urls;
 import com.example.megamarketParserBot.config.WebDriverHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.WebDriver;
@@ -25,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 public class TelegramBot extends TelegramLongPollingBot {
 
     private ExecutorService executor = Executors.newSingleThreadExecutor();
-
+    private WebDriver webDriver;
     private int counterStart;
     private String testPage;
     private boolean isParsing = false;
@@ -58,9 +59,11 @@ public class TelegramBot extends TelegramLongPollingBot {
             switch (messageText) {
                 case "/go":
                     startCommandReceived(chatId, update.getMessage().getChat().getFirstName());
+                    webDriver = WebDriverHandler.webDriverInitializer();
                     break;
 
                 case "/start":
+
                     isParsing = true;
                     executor.submit(() -> startParse(chatId));
                     sendMessage(chatId, "Парсер запущен");
@@ -72,6 +75,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                     break;
 
                 case "/offers":
+                    webDriver.navigate().to(Urls.IPHONE15PRO.getUrl());
                     sendOffers(chatId, offers);
                     break;
 
@@ -97,12 +101,11 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         try {
             while (isParsing) {
-                WebDriver webDriver = WebDriverHandler.webDriverInitializer();
                 Parser parser = new Parser(webDriver);
                 testPage = parser.serverTest().isEmpty() ? testPage : parser.serverTest();
                 if (parser.findOffer()) {
                     sendMessage(chatId, "Товар появлися в наличии!");
-                    webDriver.quit();
+                    webDriver.navigate().refresh();
                     try {
                         TimeUnit.SECONDS.sleep(30);
                         continue;
@@ -111,7 +114,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                     }
                 }
                 offers = parser.getOffers();
-                webDriver.quit();
+                webDriver.navigate().refresh();
 
                 try {
                     TimeUnit.SECONDS.sleep(30);

@@ -11,8 +11,9 @@ public enum Urls {
     MVIDEO("https://megamarket.ru/catalog/details/apple-iphone-15-pro-128gb-natural-titanium-100062422149/#?details_block=prices"),
 
     BUDS("https://megamarket.ru/catalog/details/naushniki-oneplus-buds-pro-2-e507a-besprovodnye-chernye-100050653829/#?details_block=prices"),
+    IP("https://2ip.ru/"),
 
-    TEST("https://megamarket.ru/catalog/details/besprovodnye-naushniki-samsung-galaxy-buds2-pro-graphite-600008862967/#?details_block=prices");
+    TEST("https://megamarket.ru/");
 
     private final String url;
 
