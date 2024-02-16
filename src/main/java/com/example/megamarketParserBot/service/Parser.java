@@ -15,10 +15,9 @@ public class Parser {
 
     public Parser(WebDriver webDriver) {
         this.webDriver = webDriver;
-        parseStart();
     }
 
-    private void parseStart() {
+    public void parseStart() {
         parsePage(webDriver);
     }
 

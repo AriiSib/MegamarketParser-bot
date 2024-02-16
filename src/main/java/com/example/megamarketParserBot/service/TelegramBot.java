@@ -15,6 +15,8 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -29,6 +31,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private WebDriver webDriver;
     private int counterStart;
     private String testPage;
+    private String testPage2;
     private boolean isParsing = false;
     final BotConfig config;
     Map<String, String> offers = new HashMap<>();
@@ -58,8 +61,10 @@ public class TelegramBot extends TelegramLongPollingBot {
 
             switch (messageText) {
                 case "/go":
+                    isParsing = true;
                     startCommandReceived(chatId, update.getMessage().getChat().getFirstName());
-                    webDriver = WebDriverHandler.webDriverInitializer();
+                    executor.submit(() -> startParse(chatId));
+
                     break;
 
                 case "/start":
@@ -75,16 +80,29 @@ public class TelegramBot extends TelegramLongPollingBot {
                     break;
 
                 case "/offers":
-                    webDriver.navigate().to(Urls.IPHONE15PRO.getUrl());
                     sendOffers(chatId, offers);
                     break;
 
                 case "/test":
-                    sendMessage(chatId, counterStart+"");
-                    try(BufferedWriter writer = new BufferedWriter(new FileWriter("/root/bot/MegamarketParser-Bot/TESTMESSAGE.txt"))) {
-//                        "/root/bot/MegamarketParser-Bot/TESTMESSAGE.txt"
-//                        "C:\\Users\\foxir\\OneDrive\\Рабочий стол\\TTEST.txt"
+                    sendMessage(chatId, counterStart + "");
+                    testPage = webDriver.getPageSource();
+
+                    try (BufferedWriter writer = new BufferedWriter(new FileWriter("/root/bot/MegamarketParser-Bot/TEST1.txt"))) {
+//                        "/root/bot/MegamarketParser-Bot/TEST1.txt"
+//                        "C:\\Users\\foxir\\OneDrive\\Рабочий стол\\TEST1.txt"
                         writer.write(testPage);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                    break;
+
+                case "/test2":
+                    sendMessage(chatId, counterStart + "");
+
+                    try (BufferedWriter writer = new BufferedWriter(new FileWriter("/root/bot/MegamarketParser-Bot/TEST2.txt"))) {
+//                        "/root/bot/MegamarketParser-Bot/TEST2.txt"
+//                        "C:\\Users\\foxir\\OneDrive\\Рабочий стол\\TEST2.txt"
+                        writer.write(testPage2);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
@@ -99,13 +117,21 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private void startParse(long chatId) {
 
-        try {
-            while (isParsing) {
+        while (isParsing) {
+            try {
+                sendMessage(chatId, "0");
+                webDriver = WebDriverHandler.webDriverInitializer();
+                sendMessage(chatId, "1");
                 Parser parser = new Parser(webDriver);
-                testPage = parser.serverTest().isEmpty() ? testPage : parser.serverTest();
+                sendMessage(chatId, "2");
+                webDriver.navigate().to(Urls.IPHONE15PRO.getUrl());
+                sendMessage(chatId, "3");
+                parser.parseStart();
+                sendMessage(chatId, "4");
+
                 if (parser.findOffer()) {
                     sendMessage(chatId, "Товар появлися в наличии!");
-                    webDriver.navigate().refresh();
+                    webDriver.quit();
                     try {
                         TimeUnit.SECONDS.sleep(30);
                         continue;
@@ -113,24 +139,35 @@ public class TelegramBot extends TelegramLongPollingBot {
                         continue;
                     }
                 }
+                sendMessage(chatId, "5");
                 offers = parser.getOffers();
-                webDriver.navigate().refresh();
+                sendMessage(chatId, "6");
+                webDriver.quit();
 
-                try {
-                    TimeUnit.SECONDS.sleep(30);
-                } catch (InterruptedException e) {
-                }
+                sendMessage(chatId, "Страница спарсена!");
+
+//                try {
+//                    TimeUnit.SECONDS.sleep(30);
+//                } catch (InterruptedException e) {
+//                }
                 counterStart++;
+            } catch (Exception e) {
+                Parser parser = new Parser(webDriver);
+                offers = parser.getOffers();
+                webDriver.quit();
+                sendMessage(chatId, "Критическая ошибка!!!");
+                log.error("Error occurred: " + e.getMessage());
             }
-            sendMessage(chatId, "Парсер остановлен");
-        } catch (Exception e) {
-            sendMessage(chatId, "Критическая ошибка!!!");
-            log.error("Error occurred: " + e.getMessage());
         }
+
+        sendMessage(chatId, "Парсер остановлен");
+
     }
 
     public void sendOffers(long chatId, Map<String, String> offers) {
-        StringBuilder messageText = new StringBuilder("Найденные предложения:\n");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        String date = LocalDateTime.now().format(formatter);
+        StringBuilder messageText = new StringBuilder(date + "\nНайденные предложения:\n");
         for (Map.Entry<String, String> entry : offers.entrySet()) {
             messageText.append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
         }
